@@ -22,6 +22,8 @@
 /**
  * A broker is a tool that can create a channel and a task (tread-safe)
  * 
+ * One task by broker and port
+ * 
  * That can be a server or a client
  */
 abstract class Broker {
@@ -35,6 +37,8 @@ abstract class Broker {
     /**
      * Accept connect from a client
      * 
+     * litteraly wait a connect
+     * 
      * @param name the name of the server
      * @param port the port use to connect 2 entities
      * @return a channel between the server and the client
@@ -43,20 +47,48 @@ abstract class Broker {
     /**
      * Create a channel between the server and the client
      * 
+     * litteraly wait an accept (with a timeout)
+     * 
      * @param port the port use to connect 2 entities
      * @return a channel between the server and the client
+     *         null if the named broker is not found
      */
 }
 
 /**
- * A channel is a connection between 2 tasks (a task as only one channel)
+ * A channel is a connection between 2 tasks, a point-to-point stream of bytes, where we can read and write from each side (a task as only one channel)
  * 
+ * FIFO + lossless
+ * 
+ * Main use is to connect 2 tasks
+ * 
+ * Thread safe for read and write
+ * - 1 read and 1 write at the same time on each side
+ * - 1 read and 1 write at the same time on the same side
+ * 
+ * To mark the end of a stream, the corresponding channel is simply disconnected.
+ *
+ *
  * He was created by a broker
  */
 abstract class Channel {
     int read(byte[] bytes, int offset, int length); 
     /**
      * Read the bytes from the channel
+     * 
+     * example of use :
+     *    void receive(byte[] bytes) throws DisconnectedException {
+     *      int remaining = bytes.length;
+     *      int offset = 0;
+     *      while (remaining!=0) {
+     *          int n = channel.read(bytes,offset,remaining);
+     *          offset += n;
+     *          remaining -= n;
+     *      }
+     *    }
+     * 
+     * The end of stream is the same as being as the channel being disconnected, 
+     * so the method will throw an exception (DisconnectedException). 
      * 
      * @param bytes the bytes to stock the data read
      * @param offset the offset of the bytes tab
@@ -68,6 +100,17 @@ abstract class Channel {
     /**
      * Write the bytes to the channel
      * 
+     * example of use :
+     *   void send(byte[] bytes) {
+     *      int remaining = bytes.length;
+     *      int offset = 0;
+     *      while (remaining!=0) {
+     *           int n = channel.write(bytes,offset,remaining);
+     *           offset += n;
+     *           remaining -= n;
+     *      }
+     *   }
+     * 
      * @param bytes the bytes to write
      * @param offset the offset of the bytes tab
      * @param length the length of writing
@@ -77,6 +120,17 @@ abstract class Channel {
     void disconnect();
     /**
      * Disconnect the channel
+     * 
+     * When either side of a channel disconnects, it has to be handled asynchronously. 
+     * 
+     * Locally, once the disconnect method is called, it’s no longer allowed to use the read or write methods, and only the disconnected method can be used to check the status. 
+     * If read or write is called after disconnection, an exception is thrown.
+     * 
+     * If the remote side disconnects, the local side should still be able to read any remaining bytes that were sent before the disconnection. 
+     * The local side is only considered disconnected after all those bytes are read or if the channel is locally disconnected. 
+     * 
+     * In this half-disconnected state, any attempt to write locally will result in the bytes being silently dropped. 
+     * This ensures that the final message is received before disconnection and avoids issues that arise from immediate, synchronous disconnections.
      */
 
     boolean disconnected();
