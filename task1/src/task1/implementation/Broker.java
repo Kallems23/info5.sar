@@ -1,19 +1,18 @@
 package task1.implementation;
 
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.HashMap;
 import java.util.concurrent.Semaphore;
-
-import task1.implementation.Channel;
 
 public class Broker {
 	private static BrokerManager brokerManager;
-	ConcurrentHashMap<Integer,Rdv> m_rdvlist;
+	HashMap<Integer, Rdv> m_rdvlist;
 	public Semaphore m_waitingList;
-	
+	protected String m_name;
+
 	public Broker(String name) {
+		m_name = name;
 		m_waitingList = new Semaphore(1);
-		m_rdvlist = new ConcurrentHashMap<Integer, Rdv>();
+		m_rdvlist = new HashMap<Integer, Rdv>();
 		// Ajout dans le buffer manager
 		if (brokerManager == null)
 			brokerManager = new BrokerManager();
@@ -26,21 +25,25 @@ public class Broker {
 		return rdv.accept();
 	}
 
+	public String getName() {
+		return m_name;
+	}
+
 	public Channel connect(String name, int port) {
-		Broker brDistant = brokerManager.findByName(name);
-		if(brDistant == null)
+		Broker brDistant = brokerManager.get(name);
+		if (brDistant == null)
 			return null;
-		while(true){
+		while (true) {
 			try {
 				brDistant.m_waitingList.acquire();
-			
-			if(m_rdvlist.containsKey(port)) {
-				Rdv rdv = m_rdvlist.get(port);
-				m_rdvlist.remove(port);
+
+				if (brDistant.m_rdvlist.containsKey(port)) {
+					Rdv rdv = brDistant.m_rdvlist.get(port);
+					brDistant.m_rdvlist.remove(port);
+					brDistant.m_waitingList.release();
+					return rdv.connect(this);
+				}
 				brDistant.m_waitingList.release();
-				return rdv.connect(this);
-			}
-			brDistant.m_waitingList.release();
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}

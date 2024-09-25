@@ -1,21 +1,26 @@
 package task1.implementation;
 
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.HashMap;
 
 public class BrokerManager {
-	ConcurrentHashMap<String, Broker> m_list;
+	HashMap<String, Broker> m_list;
 	
 	public BrokerManager() {
-		m_list = new ConcurrentHashMap<String, Broker>();
+		m_list = new HashMap<String, Broker>();
 	}
 	
-	public void addBroker(String name, Broker br) {
-		//if(findByName(name) != null)
-			//throw new Exception("name already use");
+	public synchronized void addBroker(String name, Broker br) {
+		if(get(name) != null)
+			throw new IllegalStateException("name already use");
 		m_list.put(name, br);
 	}
 	
-	public Broker findByName(String name) {
+	public synchronized Broker get(String name) {
 		return m_list.get(name);
+	}
+	
+	public synchronized void remove(Broker br) {
+		String name = br.getName();
+		m_list.remove(name);
 	}
 }

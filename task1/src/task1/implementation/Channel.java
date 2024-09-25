@@ -14,8 +14,8 @@ public class Channel {
 	
 	public int read(byte[] bytes, int offset, int length) {
 		int i = offset;
-		while(!writingBuffer.empty() && i < bytes.length) {
-			bytes[i] = writingBuffer.pull();
+		while(!readingBuffer.empty() && i < bytes.length) {
+			bytes[i] = readingBuffer.pull();
 			i++;
 		}
 		return i-offset;

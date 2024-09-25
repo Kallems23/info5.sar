@@ -1,20 +1,27 @@
 package task1.test;
 
-import task1.interfaces.Broker;
-import task1.interfaces.Channel;
-import task1.interfaces.Task;
+import task1.implementation.Broker;
+import task1.implementation.Channel;
+import task1.implementation.Task;
 
 public class Test1 {
 	
+	public static final String texttosend = "Hello world";
+	
 	public static void main(String[] args) {
-        Broker broker = new BrokerTest("server");
+        Broker brokerA = new Broker("server");
+        Broker brokerB = new Broker("client");
         
-        Task t1 = new TaskTest(broker, new Runnable() {
+
+        System.out.println("begin");
+        
+        Task t1 = new Task(brokerB, new Runnable() {
             @Override
             public void run() {
-                Channel chan = broker.connect("server", 1111);
-                
-                byte[] message = "Hello world".getBytes();
+            	System.out.println("t1 start");
+                Channel chan = brokerB.connect("server", 1111);
+                System.out.println("t1 connect");
+                byte[] message = texttosend.getBytes();
                 int offset = 0;
 
                 while (offset < message.length) {
@@ -37,21 +44,19 @@ public class Test1 {
             }
         });
 
-        Task t2 = new TaskTest(broker, new Runnable() {
+        Task t2 = new Task(brokerB, new Runnable() {
             @Override
             public void run() {
-                Channel chan = broker.accept(1111);
-                
-                byte[] fullMessage = new byte[100];
+            	System.out.println("t2 start");
+                Channel chan = brokerA.accept(1111);
+                System.out.println("t2 connect");
+                byte[] fullMessage = new byte[texttosend.length()];
                 int totalBytesRead = 0;
                 int bytesRead;
 
-                while ((bytesRead = chan.read(fullMessage, totalBytesRead, fullMessage.length - totalBytesRead)) != -1) {
-                    totalBytesRead += bytesRead;
-                    
-                    if (totalBytesRead == fullMessage.length) {
-                        break;
-                    }
+                while (totalBytesRead < texttosend.length()) {
+                	bytesRead = chan.read(fullMessage, totalBytesRead, texttosend.length() - totalBytesRead);
+                	totalBytesRead += bytesRead;
                 }
 
                 int totalBytesWritten = 0;
@@ -65,9 +70,7 @@ public class Test1 {
             
         });
 
-        // Start both tasks
-        t2.start();
-        t1.start();
+        System.out.println("end");
     }
 	}
 
