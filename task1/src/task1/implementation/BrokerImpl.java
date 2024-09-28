@@ -3,13 +3,17 @@ package task1.implementation;
 import java.util.HashMap;
 import java.util.concurrent.Semaphore;
 
-public class Broker {
+import task1.interfaces.Broker;
+import task1.interfaces.Channel;
+
+public class BrokerImpl extends Broker {
 	private static BrokerManager brokerManager;
 	HashMap<Integer, Rdv> m_rdvlist;
 	public Semaphore m_waitingList;
 	protected String m_name;
 
-	public Broker(String name) {
+	public BrokerImpl(String name) {
+		super(name);
 		m_name = name;
 		m_waitingList = new Semaphore(1);
 		m_rdvlist = new HashMap<Integer, Rdv>();
@@ -20,9 +24,17 @@ public class Broker {
 	}
 
 	public Channel accept(int port) {
-		Rdv rdv = new Rdv(this, port);
-		m_rdvlist.put(port, rdv);
-		return rdv.accept();
+		Rdv rdv;
+		while (true) {
+			try {
+				m_waitingList.acquire();
+				rdv = new Rdv(this, port);
+				m_rdvlist.put(port, rdv);
+				m_waitingList.release();
+				return rdv.accept();
+			} catch (InterruptedException e) {
+			}
+		}
 	}
 
 	public String getName() {
@@ -30,7 +42,7 @@ public class Broker {
 	}
 
 	public Channel connect(String name, int port) {
-		Broker brDistant = brokerManager.get(name);
+		BrokerImpl brDistant = brokerManager.get(name);
 		if (brDistant == null)
 			return null;
 		while (true) {

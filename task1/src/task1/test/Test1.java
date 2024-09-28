@@ -1,31 +1,37 @@
 package task1.test;
 
-import task1.implementation.Broker;
-import task1.implementation.Channel;
-import task1.implementation.Task;
+import task1.exception.DisconnectedException;
+import task1.implementation.BrokerImpl;
+import task1.implementation.ChannelImpl;
+import task1.implementation.TaskImpl;
 
 public class Test1 {
 	
 	public static final String texttosend = "Hello world";
 	
 	public static void main(String[] args) {
-        Broker brokerA = new Broker("server");
-        Broker brokerB = new Broker("client");
+        BrokerImpl brokerA = new BrokerImpl("server");
+        BrokerImpl brokerB = new BrokerImpl("client");
         
 
         System.out.println("begin");
         
-        Task t1 = new Task(brokerB, new Runnable() {
+        TaskImpl t1 = new TaskImpl(brokerB, new Runnable() {
             @Override
             public void run() {
             	System.out.println("t1 start");
-                Channel chan = brokerB.connect("server", 1111);
+                ChannelImpl chan = (ChannelImpl) brokerB.connect("server", 1111);
                 System.out.println("t1 connect");
                 byte[] message = texttosend.getBytes();
                 int offset = 0;
 
                 while (offset < message.length) {
-                    int bytesWritten = chan.write(message, offset, message.length - offset);
+                    int bytesWritten;
+					try {
+						bytesWritten = chan.write(message, offset, message.length - offset);
+					} catch (DisconnectedException e) {
+						break;
+					}
                     offset += bytesWritten;
                 }
 
@@ -33,7 +39,13 @@ public class Test1 {
                 offset = 0;
 
                 while (offset < message.length) {
-                    int bytesRead = chan.read(messageArrived, offset, messageArrived.length - offset);
+                    int bytesRead = 0;
+					try {
+						bytesRead = chan.read(messageArrived, offset, messageArrived.length - offset);
+					} catch (DisconnectedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
                     if (bytesRead == -1) break;
                     offset += bytesRead;
                 }
@@ -44,24 +56,32 @@ public class Test1 {
             }
         });
 
-        Task t2 = new Task(brokerB, new Runnable() {
+        TaskImpl t2 = new TaskImpl(brokerB, new Runnable() {
             @Override
             public void run() {
             	System.out.println("t2 start");
-                Channel chan = brokerA.accept(1111);
+                ChannelImpl chan = (ChannelImpl) brokerA.accept(1111);
                 System.out.println("t2 connect");
                 byte[] fullMessage = new byte[texttosend.length()];
                 int totalBytesRead = 0;
-                int bytesRead;
+                int bytesRead = 0;
 
                 while (totalBytesRead < texttosend.length()) {
-                	bytesRead = chan.read(fullMessage, totalBytesRead, texttosend.length() - totalBytesRead);
+                	try {
+						bytesRead = chan.read(fullMessage, totalBytesRead, texttosend.length() - totalBytesRead);
+					} catch (DisconnectedException e) {
+						break;
+					}
                 	totalBytesRead += bytesRead;
                 }
 
                 int totalBytesWritten = 0;
                 while (totalBytesWritten < totalBytesRead) {
-                    totalBytesWritten += chan.write(fullMessage, totalBytesWritten, totalBytesRead - totalBytesWritten);
+                    try {
+						totalBytesWritten += chan.write(fullMessage, totalBytesWritten, totalBytesRead - totalBytesWritten);
+					} catch (DisconnectedException e) {
+						break;
+					}
                 }
 
                 // Disconnect the channel

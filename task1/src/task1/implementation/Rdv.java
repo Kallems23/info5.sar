@@ -5,13 +5,14 @@ import java.util.concurrent.Semaphore;
 public class Rdv {
 	public static final int SIZE_CIRCULAR_BUFFER = 100;
 	
-	Broker m_brokerA;
-	Broker m_brokerB;
+	BrokerImpl m_brokerA;
+	BrokerImpl m_brokerB;
 	int m_port; 
 	Semaphore waiting;
-	Channel chanForA;
+	ChannelImpl chanForA;
+	ChannelImpl chanForB;
 	
-	public Rdv(Broker br, int port) {
+	public Rdv(BrokerImpl br, int port) {
 		m_brokerA = br;
 		m_port = port;
 		waiting = new Semaphore(1);
@@ -22,7 +23,7 @@ public class Rdv {
 		}
 	}
 	
-	public Channel accept() {
+	public ChannelImpl accept() {
 		try {
 			waiting.acquire();
 		} catch (InterruptedException e) {
@@ -31,12 +32,15 @@ public class Rdv {
 		return chanForA;
 	}
 	
-	public Channel connect(Broker br) {
+	public ChannelImpl connect(BrokerImpl br) {
 		m_brokerB = br;
 		CircularBuffer c1 = new CircularBuffer(SIZE_CIRCULAR_BUFFER);
 		CircularBuffer c2 = new CircularBuffer(SIZE_CIRCULAR_BUFFER);
-		chanForA = new Channel(c1, c2);
+		chanForA = new ChannelImpl(c1, c2);
 		waiting.release();
-		return new Channel(c2, c1);		
+		chanForB = new ChannelImpl(c2, c1);	
+		chanForA.setRemoteChannel(chanForB);
+		chanForB.setRemoteChannel(chanForA);
+		return chanForB;
 	}
 }
