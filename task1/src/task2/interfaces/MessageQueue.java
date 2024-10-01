@@ -1,9 +1,11 @@
 package task2.interfaces;
 
-public abstract class MessageQueue {
-	public abstract void send(byte[] bytes, int offset, int length);
+import task1.exception.DisconnectedException;
 
-	public abstract byte[] receive();
+public abstract class MessageQueue {
+	public abstract void send(byte[] bytes, int offset, int length) throws DisconnectedException;
+
+	public abstract byte[] receive() throws DisconnectedException;
 
 	public abstract void close();
 

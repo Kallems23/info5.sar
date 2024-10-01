@@ -1,5 +1,6 @@
 package task2.test;
 
+import task1.exception.DisconnectedException;
 import task1.implementation.BrokerImpl;
 import task2.implementation.MessageQueueImpl;
 import task2.implementation.QueueBrokerImpl;
@@ -22,17 +23,23 @@ public class Test1 {
 			@Override
 			public void run() {
 				System.out.println("Client try to connect");
-				MessageQueue mq = B1.connect("server", 8888);
+				MessageQueue mq = TaskImpl.getTask().getQueueBroker().connect("server", 8888);
 				System.out.println("Client connected");
 				byte[] message = texttosend.getBytes();
 
 				System.out.println("Client try to send");
-				mq.send(message, 0, message.length);
-				System.out.println("Client sended");
+				try {
+					mq.send(message, 0, message.length);
 
-				System.out.println("Client try to receive");
-				byte[] mreceveived = mq.receive();
-				System.out.println("Client received :" + mreceveived.toString());
+					System.out.println("Client sended");
+
+					System.out.println("Client try to receive");
+					byte[] mreceveived = mq.receive();
+					System.out.println("Client received :" + new String(mreceveived));
+
+				} catch (DisconnectedException e) {
+					e.printStackTrace();
+				}
 
 				mq.close();
 			}
@@ -43,22 +50,26 @@ public class Test1 {
 			@Override
 			public void run() {
 				System.out.println("Server try to connect");
-				MessageQueue mq = B2.accept(8888);
+				MessageQueue mq = TaskImpl.getTask().getQueueBroker().accept(8888);
 				System.out.println("Server connected");
 
 				System.out.println("Server try to receive");
-				byte[] mreceveived = mq.receive();
-				System.out.println("Server received :" + mreceveived.toString());
+				byte[] mreceveived;
+				try {
+					mreceveived = mq.receive();
+					System.out.println("Server received :" + new String(mreceveived));
 
-				System.out.println("Server try to send");
-				mq.send(mreceveived, 0, mreceveived.length);
+					System.out.println("Server try to send");
+					mq.send(mreceveived, 0, mreceveived.length);
+				} catch (DisconnectedException e) {
+					e.printStackTrace();
+				}
 				System.out.println("Server sended");
 
 				mq.close();
 			}
 		});
-		
-		t1.start();
-		t2.start();
+
+		System.out.println("end init");
 	}
 }

@@ -5,28 +5,27 @@ import task2.interfaces.MessageQueue;
 import task2.interfaces.QueueBroker;
 
 public class QueueBrokerImpl extends QueueBroker {
-
+	
+	Broker m_br;
+	
 	public QueueBrokerImpl(Broker broker) {
 		super(broker);
-		// TODO Auto-generated constructor stub
+		m_br = broker;
 	}
 
 	@Override
 	public String name() {
-		// TODO Auto-generated method stub
-		return null;
+		return m_br.name();
 	}
 
 	@Override
 	public MessageQueue accept(int port) {
-		// TODO Auto-generated method stub
-		return null;
+		return new MessageQueueImpl(m_br.accept(port));
 	}
 
 	@Override
 	public MessageQueue connect(String name, int port) {
-		// TODO Auto-generated method stub
-		return null;
+		return new MessageQueueImpl(m_br.connect(name, port));
 	}
 
 }
