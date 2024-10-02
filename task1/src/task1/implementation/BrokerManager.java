@@ -20,7 +20,7 @@ public class BrokerManager {
 	}
 	
 	public synchronized void remove(BrokerImpl br) {
-		String name = br.getName();
+		String name = br.name();
 		m_list.remove(name);
 	}
 }

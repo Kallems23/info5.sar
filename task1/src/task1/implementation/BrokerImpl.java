@@ -22,6 +22,7 @@ public class BrokerImpl extends Broker {
 			brokerManager = new BrokerManager();
 		brokerManager.addBroker(name, this);
 	}
+	
 
 	public Channel accept(int port) {
 		Rdv rdv;
@@ -37,7 +38,7 @@ public class BrokerImpl extends Broker {
 		}
 	}
 
-	public String getName() {
+	public String name() {
 		return m_name;
 	}
 
