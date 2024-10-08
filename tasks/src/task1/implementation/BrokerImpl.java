@@ -1,12 +1,20 @@
 package task1.implementation;
 
 import java.util.HashMap;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import task1.interfaces.Broker;
 import task1.interfaces.Channel;
 
 public class BrokerImpl extends Broker {
+    private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
+
 	private static BrokerManager brokerManager;
 	HashMap<Integer, Rdv> m_rdvlist;
 	public Semaphore m_waitingList;
@@ -42,10 +50,13 @@ public class BrokerImpl extends Broker {
 		return m_name;
 	}
 
-	public Channel connect(String name, int port) {
+	public Channel connect(String name, int port) throws TimeoutException {
 		BrokerImpl brDistant = brokerManager.get(name);
 		if (brDistant == null)
 			return null;
+		
+        CompletableFuture<Channel> connectionTask = CompletableFuture.supplyAsync(() -> {
+
 		while (true) {
 			try {
 				brDistant.m_waitingList.acquire();
@@ -60,7 +71,22 @@ public class BrokerImpl extends Broker {
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
-		}
+		} }, executor);
+
+
+            // Attendre le résultat de la tâche ou lancer un TimeoutException après 10 secondes
+            try {
+				return connectionTask.get(10, TimeUnit.SECONDS);
+			} catch (InterruptedException e) {
+				
+			} catch (ExecutionException e) {
+
+			} catch (TimeoutException e) {
+				 connectionTask.cancel(true);
+		         throw new TimeoutException("Connection attempt timed out after 10 seconds");
+			}
+            return null;
+
 	}
 
 }

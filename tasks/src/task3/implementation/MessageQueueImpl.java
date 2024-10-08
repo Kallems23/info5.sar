@@ -43,6 +43,8 @@ public class MessageQueueImpl extends MessageQueue {
 						});
 
 					} catch (DisconnectedException e) {
+						m_l.closed();
+						close();
 					}
 				}
 			}
@@ -79,8 +81,8 @@ public class MessageQueueImpl extends MessageQueue {
 							try {
 								byteWrited += m_chan.write(mlength, byteWrited, 4 - byteWrited);
 							} catch (DisconnectedException e) {
-								// TODO Auto-generated catch block
-								e.printStackTrace();
+								m_l.closed();
+								close();
 							}
 						}
 
@@ -89,8 +91,8 @@ public class MessageQueueImpl extends MessageQueue {
 							try {
 								byteWrited += m_chan.write(bytes, byteWrited + offset, length + offset - byteWrited);
 							} catch (DisconnectedException e) {
-								// TODO Auto-generated catch block
-								e.printStackTrace();
+								m_l.closed();
+								close();
 							}
 						}
 					}
@@ -104,6 +106,7 @@ public class MessageQueueImpl extends MessageQueue {
 	@Override
 	public void close() {
 		listen.interrupt();
+		m_l.closed();
 	}
 
 	@Override
