@@ -1,5 +1,7 @@
 package task3.implementation;
 
+import java.util.concurrent.TimeoutException;
+
 import task1.implementation.BrokerImpl;
 import task1.implementation.TaskImpl;
 import task1.interfaces.Broker;
@@ -22,7 +24,7 @@ public class QueueBrokerImpl extends QueueBroker {
 			@Override
 			public void run() {
 				TaskImpl t = new TaskImpl(m_br, new Runnable() {
-					
+
 					@Override
 					public void run() {
 						MessageQueue mqueue = new MessageQueueImpl(m_br.accept(port));
@@ -58,7 +60,14 @@ public class QueueBrokerImpl extends QueueBroker {
 
 					@Override
 					public void run() {
-						MessageQueue mqueue = new MessageQueueImpl(m_br.connect(name, port));
+						MessageQueue mqueued ;
+						try {
+							mqueued = new MessageQueueImpl(m_br.connect(name, port));
+						} catch (TimeoutException e) {
+							e.printStackTrace();
+							return;
+						}
+						MessageQueue mqueue = mqueued;
 						connectTask.post(new Runnable() {
 
 							@Override

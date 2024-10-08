@@ -1,5 +1,7 @@
 package task1.test;
 
+import java.util.concurrent.TimeoutException;
+
 import task1.exception.DisconnectedException;
 import task1.implementation.BrokerImpl;
 import task1.implementation.ChannelImpl;
@@ -20,7 +22,12 @@ public class Test1 {
             @Override
             public void run() {
             	System.out.println("t1 start");
-                ChannelImpl chan = (ChannelImpl) brokerB.connect("server", 1111);
+                ChannelImpl chan = null;
+				try {
+					chan = (ChannelImpl) brokerB.connect("server", 1111);
+				} catch (TimeoutException e) {
+					e.printStackTrace();
+				}
                 System.out.println("t1 connect");
                 byte[] message = texttosend.getBytes();
                 int offset = 0;

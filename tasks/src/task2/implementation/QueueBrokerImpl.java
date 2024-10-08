@@ -1,5 +1,7 @@
 package task2.implementation;
 
+import java.util.concurrent.TimeoutException;
+
 import task1.interfaces.Broker;
 import task2.interfaces.MessageQueue;
 import task2.interfaces.QueueBroker;
@@ -24,7 +26,7 @@ public class QueueBrokerImpl extends QueueBroker {
 	}
 
 	@Override
-	public MessageQueue connect(String name, int port) {
+	public MessageQueue connect(String name, int port) throws TimeoutException {
 		return new MessageQueueImpl(m_br.connect(name, port));
 	}
 

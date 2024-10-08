@@ -1,5 +1,7 @@
 package task2.test;
 
+import java.util.concurrent.TimeoutException;
+
 import task1.exception.DisconnectedException;
 import task1.implementation.BrokerImpl;
 import task2.implementation.MessageQueueImpl;
@@ -23,7 +25,12 @@ public class Test1 {
 			@Override
 			public void run() {
 				System.out.println("Client try to connect");
-				MessageQueue mq = TaskImpl.getTask().getQueueBroker().connect("server", 8888);
+				MessageQueue mq = null;
+				try {
+					mq = TaskImpl.getTask().getQueueBroker().connect("server", 8888);
+				} catch (TimeoutException e) {
+					e.printStackTrace();
+				}
 				System.out.println("Client connected");
 				byte[] message = texttosend.getBytes();
 
