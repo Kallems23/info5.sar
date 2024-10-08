@@ -43,8 +43,7 @@ public class MessageQueueImpl extends MessageQueue {
 						});
 
 					} catch (DisconnectedException e) {
-						m_l.closed();
-						close();
+						close();		
 					}
 				}
 			}
@@ -65,6 +64,9 @@ public class MessageQueueImpl extends MessageQueue {
 
 	@Override
 	public boolean send(byte[] bytes, int offset, int length) {
+		if(closed())
+			return false;
+		
 		Task sendTask = new Task();
 
 		sendTask.post(new Runnable() {
@@ -81,7 +83,6 @@ public class MessageQueueImpl extends MessageQueue {
 							try {
 								byteWrited += m_chan.write(mlength, byteWrited, 4 - byteWrited);
 							} catch (DisconnectedException e) {
-								m_l.closed();
 								close();
 							}
 						}
@@ -91,7 +92,6 @@ public class MessageQueueImpl extends MessageQueue {
 							try {
 								byteWrited += m_chan.write(bytes, byteWrited + offset, length + offset - byteWrited);
 							} catch (DisconnectedException e) {
-								m_l.closed();
 								close();
 							}
 						}
